@@ -1,27 +1,24 @@
 # EM-algorithm
 ## 概要
-- 指定した平均，共分散から自動で3次元のデータ点をプロットしこのデータ群のクラスタ分けをおこなうプログラム．
-- 最初クラスタを100個に設定しており，クラスタの中心位置はランダムにしている．
-- EM法を用いることでクラスタ数を減らしていき，クラスタの中心位置の変更が既定の範囲以内になった時自動で動作が終了しプロットをおこなう．
+- 指定した平均，共分散から自動で3次元のデータ点をプロットし，このデータ群のクラスタリングをおこなうプログラム．
+- クラスタを100個に設定しており，クラスタの平均位置はランダムにしている．
+- EM法を用いることでクラスタ数を減らしていき，クラスタの中心位置の変更が閾値以下になった場合自動で動作が終了しプロットをおこなう．
 
 ## Parameter
 |変数名|意味|初期状態|
 |-----|-----|----|
 | k |初期クラスタ数 | 100|
-| mu | 平均値 |--|
-| Sigma |分散 |--|
-| pi | 混合行列 |--|
 | threshold | クラスタ削除の閾値 | 0.01|
-| tol | クラスタ中心の変化の閾値 | 1e-3| 
+| tol | クラスタ中心の移動量の閾値 | 1e-3| 
 | stable_limit | 収束判定に必要な連続回数（Δmu < tol） | 3 |
 
 ## 実行例
 ```
-git clonehttps://github.com/flyzll/propablistic-robotics
+git clone https://github.com/flyzll/propablistic-robotics
+cd propablistic-robotics
 python3 EM.py
 ```
-iter 257: K = 37   # iter: EM反復回数, K: 残存クラスタ数
-
-
+## 出力例
+iter 257: K = 37   # iter: EM法の反復回数, K: クラスタ数
 <img width="634" height="571" alt="Image" src="https://github.com/user-attachments/assets/b024a83b-e52e-4046-8f5f-b05aa1e05ce4" />
 

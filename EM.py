@@ -18,24 +18,26 @@ points = np.vstack([
     generate_object([2, 2, 2],
                     [[0.3, 0.1, 0.0],
                      [0.1, 0.3, 0.0],
-                     [0.0, 0.0, 0.3]], 300),
+                     [0.0, 0.0, 0.3]], 100),
 
     generate_object([2, 10, 3],
                     [[0.3, 0.0, 0.0],
                      [0.0, 0.3, 0.0],
-                     [0.0, 0.0, 0.3]], 300),
+                     [0.0, 0.0, 0.3]], 200),
 
     generate_object([10, 14, 15],
                     [[0.3, 0.0, 0.0],
                      [0.0, 0.3, 0.0],
-                     [0.0, 0.0, 0.3]], 300)
+                     [0.0, 0.0, 0.3]], 100)
 ])
 
 N, dimention = points.shape
 
 K = 100 #初期クラスタ数
+mins = points.min(axis=0)
+maxs = points.max(axis=0)
 
-mu = points[np.random.choice(N, K, replace=True)] #平均値
+mu = np.random.uniform(mins, maxs, size=(K, dimention))
 Sigma = np.array([np.eye(dimention) for _ in range(K)]) #共分散
 pi = np.ones(K) / K  # 混合係数
 threshold = 0.01   # 全体の1%未満
@@ -72,7 +74,8 @@ if __name__ == "__main__":
 
             pi[k] = Nk[k] / N
 
-        valid = pi > threshold #クラスタが有効かどうかの判定
+        # クラスタの削除
+        valid = pi > threshold 
 
         mu = mu[valid]
         Sigma = Sigma[valid]
