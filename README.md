@@ -17,5 +17,10 @@
 
 ## 実行例
 iter 257: K = 37
+
 iter : E step, M stepそれぞれをループした回数の表示
+
 K : 残ったクラスタ数の表示
+
+<img width="634" height="571" alt="Image" src="https://github.com/user-attachments/assets/b024a83b-e52e-4046-8f5f-b05aa1e05ce4" />
+
