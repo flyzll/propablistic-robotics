@@ -38,87 +38,86 @@ K = 100 #初期クラスタ数
 mu = points[np.random.choice(N, K, replace=True)] #平均値
 Sigma = np.array([np.eye(dimention) for _ in range(K)]) #共分散
 pi = np.ones(K) / K  # 混合係数
-
+threshold = 0.01   # 全体の1%未満
 tol = 1e-3         # クラスタ中心の変化の閾値
 stable_limit = 3    #　3回連続で閾値以下なら収束とみなす
 stable_count = 0    # 連続カウンタ
 mu_prev = None
 
+if __name__ == "__main__":
+    for iteration in range(1000):
+        # E-step
+        gamma = np.zeros((N, K))
+        for k in range(K):
+            gamma[:, k] = pi[k] * gaussian(points, mu[k], Sigma[k])
 
-for iteration in range(1000):
-    # E-step
+        gamma_sum = gamma.sum(axis=1, keepdims=True)
+        gamma_sum[gamma_sum == 0] = 1e-12
+        gamma /= gamma_sum
+
+        # M-step
+        Nk = gamma.sum(axis=0)
+
+        for k in range(K):
+            if Nk[k] < 1e-6:
+                continue
+
+            mu[k] = np.sum(gamma[:, k, None] * points, axis=0) / Nk[k]
+
+            diff = points - mu[k]
+            Sigma[k] = (
+                gamma[:, k, None, None]
+                * np.einsum('ni,nj->nij', diff, diff)
+            ).sum(axis=0) / Nk[k]
+
+            pi[k] = Nk[k] / N
+
+        valid = pi > threshold #クラスタが有効かどうかの判定
+
+        mu = mu[valid]
+        Sigma = Sigma[valid]
+        pi = pi[valid]
+
+        pi /= pi.sum()
+        K = len(pi)
+
+        # 収束判定 
+        if mu_prev is not None and mu.shape == mu_prev.shape:
+            diff = np.linalg.norm(mu - mu_prev)
+
+            if diff < tol:
+                stable_count += 1
+                
+            else:
+                stable_count = 0
+
+            if stable_count >= stable_limit:
+                print(f"iter {iteration}: K = {K}")
+                print("Stop EM.")
+                break
+
+        mu_prev = mu.copy()
+
+
     gamma = np.zeros((N, K))
     for k in range(K):
         gamma[:, k] = pi[k] * gaussian(points, mu[k], Sigma[k])
+    gamma /= gamma.sum(axis=1, keepdims=True)
 
-    gamma_sum = gamma.sum(axis=1, keepdims=True)
-    gamma_sum[gamma_sum == 0] = 1e-12
-    gamma /= gamma_sum
+    labels = np.argmax(gamma, axis=1)
 
-    # M-step
-    Nk = gamma.sum(axis=0)
+    fig = plt.figure(figsize=(7, 7))
+    ax = fig.add_subplot(111, projection='3d')
 
     for k in range(K):
-        if Nk[k] < 1e-6:
-            continue
+        cluster = points[labels == k]
+        ax.scatter(cluster[:, 0], cluster[:, 1], cluster[:, 2], s=10)
 
-        mu[k] = np.sum(gamma[:, k, None] * points, axis=0) / Nk[k]
+        ax.scatter(mu[k][0], mu[k][1], mu[k][2],
+                c='black', marker='x', s=100)
 
-        diff = points - mu[k]
-        Sigma[k] = (
-            gamma[:, k, None, None]
-            * np.einsum('ni,nj->nij', diff, diff)
-        ).sum(axis=0) / Nk[k]
-
-        pi[k] = Nk[k] / N
-
-    threshold = 0.01   # 全体の1%未満
-    valid = pi > threshold #クラスタが有効かどうかの判定
-
-    mu = mu[valid]
-    Sigma = Sigma[valid]
-    pi = pi[valid]
-
-    pi /= pi.sum()
-    K = len(pi)
-
-    # 収束判定 
-    if mu_prev is not None and mu.shape == mu_prev.shape:
-        diff = np.linalg.norm(mu - mu_prev)
-
-        if diff < tol:
-            stable_count += 1
-            
-        else:
-            stable_count = 0
-
-        if stable_count >= stable_limit:
-            print(f"iter {iteration}: K = {K}")
-            print("Stop EM.")
-            break
-
-    mu_prev = mu.copy()
-
-
-gamma = np.zeros((N, K))
-for k in range(K):
-    gamma[:, k] = pi[k] * gaussian(points, mu[k], Sigma[k])
-gamma /= gamma.sum(axis=1, keepdims=True)
-
-labels = np.argmax(gamma, axis=1)
-
-fig = plt.figure(figsize=(7, 7))
-ax = fig.add_subplot(111, projection='3d')
-
-for k in range(K):
-    cluster = points[labels == k]
-    ax.scatter(cluster[:, 0], cluster[:, 1], cluster[:, 2], s=10)
-
-    ax.scatter(mu[k][0], mu[k][1], mu[k][2],
-               c='black', marker='x', s=100)
-
-ax.set_xlabel("X")
-ax.set_ylabel("Y")
-ax.set_zlabel("Z")
-ax.set_title(f"3D EM with Over-clustering (Final K = {K})")
-plt.show()
+    ax.set_xlabel("X")
+    ax.set_ylabel("Y")
+    ax.set_zlabel("Z")
+    ax.set_title(f"3D EM with Over-clustering (Final K = {K})")
+    plt.show()
