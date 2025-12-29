@@ -16,7 +16,10 @@
 | stable_limit | 収束判定に必要な連続回数（Δmu < tol） | 3 |
 
 ## 実行例
-```text
+```
+git clonehttps://github.com/flyzll/propablistic-robotics
+python3 EM.py
+```
 iter 257: K = 37   # iter: EM反復回数, K: 残存クラスタ数
 
 
