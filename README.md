@@ -16,11 +16,9 @@
 | stable_limit | 収束判定に必要な連続回数（Δmu < tol） | 3 |
 
 ## 実行例
-iter 257: K = 37
+```text
+iter 257: K = 37   # iter: EM反復回数, K: 残存クラスタ数
 
-iter : E step, M stepそれぞれをループした回数の表示
-
-K : 残ったクラスタ数の表示
 
 <img width="634" height="571" alt="Image" src="https://github.com/user-attachments/assets/b024a83b-e52e-4046-8f5f-b05aa1e05ce4" />
 
