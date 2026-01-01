@@ -4,6 +4,9 @@ from mpl_toolkits.mplot3d import Axes3D
 
 np.random.seed()
 
+# ===============================
+# データ生成関数
+# ===============================
 def generate_object(center, cov, n_points):
     return np.random.multivariate_normal(center, cov, n_points)
 
@@ -11,42 +14,53 @@ def gaussian(x, mu, Sigma):
     diff = x - mu
     inv = np.linalg.inv(Sigma)
     det = np.linalg.det(Sigma)
-    norm = 1.0 / np.sqrt((2 * np.pi)**dimention * det)* np.exp(-0.5 * np.sum(diff @ inv * diff, axis=1))
-    return norm 
+    norm = (
+        1.0
+        / np.sqrt((2 * np.pi) ** dimension * det)
+        * np.exp(-0.5 * np.sum(diff @ inv * diff, axis=1))
+    )
+    return norm
+
+true_params = [
+    {
+        "mu": np.array([2, 2, 2]),
+        "Sigma": np.array([[0.3, 0.1, 0.0],
+                           [0.1, 0.3, 0.0],
+                           [0.0, 0.0, 0.3]])
+    },
+    {
+        "mu": np.array([2, 10, 3]),
+        "Sigma": np.array([[0.3, 0.0, 0.0],
+                           [0.0, 0.3, 0.0],
+                           [0.0, 0.0, 0.3]])
+    },
+    {
+        "mu": np.array([10, 14, 15]),
+        "Sigma": np.array([[0.3, 0.0, 0.0],
+                           [0.0, 0.3, 0.0],
+                           [0.0, 0.0, 0.3]])
+    }
+]
 
 points = np.vstack([
-    generate_object([2, 2, 2],
-                    [[0.3, 0.1, 0.0],
-                     [0.1, 0.3, 0.0],
-                     [0.0, 0.0, 0.3]], 100),
-
-    generate_object([2, 10, 3],
-                    [[0.3, 0.0, 0.0],
-                     [0.0, 0.3, 0.0],
-                     [0.0, 0.0, 0.3]], 200),
-
-    generate_object([10, 14, 15],
-                    [[0.3, 0.0, 0.0],
-                     [0.0, 0.3, 0.0],
-                     [0.0, 0.0, 0.3]], 100)
+    generate_object(true_params[0]["mu"], true_params[0]["Sigma"], 100),
+    generate_object(true_params[1]["mu"], true_params[1]["Sigma"], 200),
+    generate_object(true_params[2]["mu"], true_params[2]["Sigma"], 100)
 ])
 
-N, dimention = points.shape
+N, dimension = points.shape
 
-K = 100 #初期クラスタ数
+K = 3
 mins = points.min(axis=0)
 maxs = points.max(axis=0)
 
-mu = np.random.uniform(mins, maxs, size=(K, dimention))
-Sigma = np.array([np.eye(dimention) for _ in range(K)]) #共分散
-pi = np.ones(K) / K  # 混合係数
-threshold = 0.01   # 全体の1%未満
-tol = 1e-3         # クラスタ中心の変化の閾値
-stable_limit = 3    #　3回連続で閾値以下なら収束とみなす
-stable_count = 0    # 連続カウンタ
-mu_prev = None
+mu = np.random.uniform(mins, maxs, size=(K, dimension))
+Sigma = np.array([np.eye(dimension) for _ in range(K)])
+pi = np.ones(K) / K
+
 
 if __name__ == "__main__":
+
     for iteration in range(1000):
         # E-step
         gamma = np.zeros((N, K))
@@ -57,7 +71,7 @@ if __name__ == "__main__":
         gamma_sum[gamma_sum == 0] = 1e-12
         gamma /= gamma_sum
 
-        # M-step
+        # M-step 
         Nk = gamma.sum(axis=0)
 
         for k in range(K):
@@ -69,38 +83,31 @@ if __name__ == "__main__":
             diff = points - mu[k]
             Sigma[k] = (
                 gamma[:, k, None, None]
-                * np.einsum('ni,nj->nij', diff, diff)
+                * np.einsum("ni,nj->nij", diff, diff)
             ).sum(axis=0) / Nk[k]
 
             pi[k] = Nk[k] / N
 
-        # クラスタの削除
-        valid = pi > threshold 
-
-        mu = mu[valid]
-        Sigma = Sigma[valid]
-        pi = pi[valid]
-
         pi /= pi.sum()
-        K = len(pi)
 
-        # 収束判定 
-        if mu_prev is not None and mu.shape == mu_prev.shape:
-            diff = np.linalg.norm(mu - mu_prev)
 
-            if diff < tol:
-                stable_count += 1
-                
-            else:
-                stable_count = 0
+    print(" TRUE DATA PARAMETERS ")
+    for i, p in enumerate(true_params):
+        print(f"\n[True Cluster {i}]")
+        print("Mean (mu):")
+        print(p["mu"])
+        print("Covariance (Sigma):")
+        print(p["Sigma"])
 
-            if stable_count >= stable_limit:
-                print(f"iter {iteration}: K = {K}")
-                #print("Stop EM.")
-                break
 
-        mu_prev = mu.copy()
-
+    print(" ESTIMATED PARAMETERS (EM) ")
+    for k in range(K):
+        print(f"\n[Estimated Cluster {k}]")
+        print("Mean (mu):")
+        print(mu[k])
+        print("Covariance (Sigma):")
+        print(Sigma[k])
+  
 
     gamma = np.zeros((N, K))
     for k in range(K):
@@ -109,18 +116,18 @@ if __name__ == "__main__":
 
     labels = np.argmax(gamma, axis=1)
 
+    # プロット
     fig = plt.figure(figsize=(7, 7))
-    ax = fig.add_subplot(111, projection='3d')
+    ax = fig.add_subplot(111, projection="3d")
 
     for k in range(K):
         cluster = points[labels == k]
         ax.scatter(cluster[:, 0], cluster[:, 1], cluster[:, 2], s=10)
-
         ax.scatter(mu[k][0], mu[k][1], mu[k][2],
-                c='black', marker='x', s=100)
+                   c="black", marker="x", s=100)
 
     ax.set_xlabel("X")
     ax.set_ylabel("Y")
     ax.set_zlabel("Z")
-    ax.set_title(f"3D EM with Over-clustering (Final K = {K})")
+    ax.set_title("3D EM algorithm")
     plt.show()
