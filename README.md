@@ -13,7 +13,7 @@
 | Nk | 任意のデータがk番目のクラスタに属する確率 |  |
 
 ## プログラムの内容
-**1. Estep** 
+**1. Estep**   
 次の式より任意の点nが任意のクラスタkに属する事後分布γnkを計算する.  
 <img width="213" height="50" alt="Image" src="https://github.com/user-attachments/assets/7e0cc076-a08b-4524-9df3-93e93a11745e" />  
 
